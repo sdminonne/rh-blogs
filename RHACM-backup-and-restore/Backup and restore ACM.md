@@ -7,13 +7,14 @@ RedHat Advanced Cluster Management (RHACM in the following) supplies the ability
  * Kubernetes control plane and compute nodes
  * SDN control and data planes
 
-Being accustomed to the two layers approach largely reduce the _cognitive load_ during operations increasing understanding, and finally, predictability. At the same time, with its simplicity, the two layers approach increases robustness.
+DevOps use to work with two levels-architecture, increasing understanding, and finally predictability.
+At the same time, with its simplicity, the two layers approach increases robustness.
 
 Unluckily the single pane of glass is irreparably linked to the "single point of failure" problem. In the last months, understandably, RHACM users keep reporting the need of backing up the control plane configurations to recover quickly in case of an outage. 
 
 ### DR foundations
 
-The ability to backup, restore RHACM and re-registering the managed clusters lays the foundations for an Active-Passive [Disaster Recovery](https://en.wikipedia.org/wiki/Disaster_recovery) (DR) solution. Ideally, an organization could backup the HUB configuration with some frequency, restoring the configurations elsewhere in case of an outage. Obviously a full DR solution is well beyond the scope of this article, and a more robust solution is needed even to start think about DR, too many parameters could impact _business continuity_ and every organization has to consider carefully what, how and when should be backed-up and restored to minimize [RTO](https://https://www.forbes.com/sites/sungardas/2015/04/30/like-the-nfl-draft-is-the-clock-the-enemy-of-your-recovery-time-objective/?sh=3f76fe9f7938) and RPO.
+The ability to backup, restore RHACM, and re-registering the managed clusters lays the foundations for an Active-Passive [Disaster Recovery](https://en.wikipedia.org/wiki/Disaster_recovery) (DR) solution. Ideally, an organization could backup the HUB configuration with some frequency, restoring the configurations elsewhere in case of an outage. Obviously, a full DR solution is well beyond the scope of this article, and a more robust solution is needed even to start thinking about DR, too many parameters could impact _business continuity_ and every organization has to consider carefully what, how, and when should be backed-up and restored to minimize [RTO](https://https://www.forbes.com/sites/sungardas/2015/04/30/like-the-nfl-draft-is-the-clock-the-enemy-of-your-recovery-time-objective/?sh=3f76fe9f7938) and RPO.
 
 ### This blog
 While most of the configuration could be re-created from scratch through, for example,  [GitOps](https://www.redhat.com/en/topics/devops/what-is-gitops) approach, at the end of a backup procedure the managed cluster fleet is not correctly registered in the new HUB. The goal of this article is to show how RHACM managed clusters configurations could be restored. We're going to use only common Unix command (`bash`) and the Openshift `oc` client. 
@@ -22,18 +23,18 @@ As backup and restore solution we use [Velero](https://velero.io/): the de-facto
 
 ## Velero
 
-Velero is an open-source tool to backup and to restore Kubernetes cluster. Velero follows the operator pattern reacting to the creation of some custom resources. The custom resources used in this article are `backups.velero.io ` and `restores.velero.io` but Velero exposes more than 10 custom resources to fully automate more complex workflows.
+Velero is an open-source tool to backup and restore a Kubernetes cluster. Velero follows the operator pattern reacting to the creation of some custom resources. The custom resources used in this article are `backups.velero.io ` and `restores.velero.io` but Velero exposes more than 10 custom resources to fully automate more complex workflows.
 
 We need to install Velero to back up the cluster and restore the cluster as well. For this article, as we restore the backup in another cluster, Velero has to be installed on both clusters.
 
 Velero saves the resources as manifest files in a tarball format and it stores the tarball in S3 storage. It supports all major S3 providers, in this article we're going to use AWS S3.
 
-We're going to deploy velero through `Velero` CLI but it can be installed in other ways, for example through [helm](https://artifacthub.io/packages/helm/vmware-tanzu/velero#using-helm-3) or as a usual deployment or through OperatorHub.  Whatever the installation method, velero needs the S3 bucket name, the backup storage and the volume snapshot location region, and obviously the S3 credentials.
+We're going to deploy `Velero` through its CLI but it can be installed in other ways, for example through [helm](https://artifacthub.io/packages/helm/vmware-tanzu/velero#using-helm-3) or as a usual deployment or through OperatorHub.  Whatever the installation method, velero needs the S3 bucket name, the backup storage and the volume snapshot location region, and obviously the S3 credentials.
 
 
 ## The configuration
 
-Our _fleet_ is composed by only one managed cluster `managed-one`. Having several managed clusters doesn't change the foundamental ideas we present in this article while it may over-complexify the bash commands through `loop` and potentially the need to `wait until` each command to be finished. 
+Our _fleet_ is composed of only one managed cluster `managed-one`. Having several managed clusters doesn't change the fundamental ideas we present in this article while it may over-complexify the bash commands through `loop` and potentially the need to `wait until` each command to be finished. 
 
 ![](https://i.imgur.com/0WlqaBZ.png)
 
@@ -109,7 +110,7 @@ As soon `Velero` is up and running, we can run the backup command.
 
 ## The backup process
 
-The backup process is performed backingup all the main RHACM namespaces and all the managed clusters namespaces, in this case only the `managed-one`. We don't backup cluster scoped resources to minimize the amount of data to backup. Avoiding the backup of cluster scoped resources will have some impact during the _restore_ since we'll need to recreate `cluster-roles` and `clusterrole-bindings`. The managed cluster in RHACM are represented by a namespace (backed-up) and by a custom resource `managedclusters.cluster.open-cluster-management.io`.
+The backup process is performed backing-up all the main RHACM namespaces and all the managed clusters namespaces, in this case only the `managed-one`. We don't backup cluster scoped resources to minimize the amount of data to backup. Avoiding the backup of cluster scoped resources will have some impact during the _restore_ since we'll need to recreate `cluster-roles` and `clusterrole-bindings`. The managed cluster in RHACM is represented by a namespace (backed-up) and by a custom resource `managedclusters.cluster.open-cluster-management.io`.
 
 We execute backup through `velero` CLI:
 
@@ -126,7 +127,7 @@ Waiting for backup to complete. You may safely press ctrl-c to stop waiting - yo
 Backup completed with status: Completed. You may check for more information using the commands `velero backup describe acm-backup-blog` and `velero backup logs acm-backup-blog`.
 ```
 
-At the end of the backup process we I list the backups (only one currently), in `Completed` status without errors or warnings.
+At the end of the backup process, we list the backups (only one currently), in `Completed` status without errors or warnings.
 
 ```shell
 $ velero backup get -n velero
@@ -137,7 +138,7 @@ acm-backup-blog   Completed   0        0          2021-08-02 12:12:08 +0200 CEST
 In the `S3 Console` we can see the `acm-backup-log` currently present in the `S3 Console`
 ![](https://i.imgur.com/PgnhKsz.png)
 
-For the sake of this article the backup process is terminated. As already mentione in a _production environment_ definitively more is needed, generally I can report:
+For the sake of this article, the backup process is finished. As already mentioned in a _production environment_ definitively more is needed. Gnerally we could cite :
  * error handling
  * backup frequency
  * S3 storage space handling
@@ -149,7 +150,7 @@ the list could (and should) continue accordingly to the specific use case.
 
 ## The restore process
 
-At this point we should assume the current Hub `dr-hub1` is severly impacted by a _disaster_. So we operate on another Hub (`dr-hub2`) to restore the data and to re-register the managed cluster `managed-one`. In order to simplify this artcile I assume ACM is already installed on `dr-hub2`.
+At this point, we should assume the current Hub `dr-hub1` is severely impacted by a _disaster_. So we operate on another Hub (`dr-hub2`) to restore the data and to re-register the managed cluster `managed-one`. To simplify this article, I assume ACM is already installed on `dr-hub2`.
 
 To proceed on the restore we need to install `Velero` configuring the S3 storage in the same way
 
@@ -180,7 +181,7 @@ NAME              AGE
 acm-backup-blog   58m
 ```
 
-Now we can restore the managed cluster in `dr-hub2`, we're going to use `velero` CLI again:
+Now we can restore the managed cluster in `dr-hub2`, we're going to use `Velero` CLI again:
 
 ```shell
 velero restore create --from-backup acm-backup-blog
@@ -206,7 +207,6 @@ looking at the UIs rispectively we find the the `managed-one` cluster is still r
 
 ![](https://i.imgur.com/Nr5vZzX.png)
 
-
 Even if the managed clusters is not registered it appears in the UI.
 ![](https://i.imgur.com/gHIYsSM.png)
 
@@ -214,10 +214,10 @@ UI detects the presence of the `managed-one` namespace but it returns the failur
 
 ### Registering the managed cluster
 
-The current solution to register each managed cluster consists in having each managed cluster `registration` operator to register to the new Hub. Each managed cluster `registration` operator watches the `bootstrap-hub-kubeconfig` secret inside `open-cluster-management-agent` namespace. The general idea is:
+The current solution to register each managed cluster consists in having each managed cluster `registration` operator  register to the new Hub. Each managed cluster `registration` operator watches the `bootstrap-hub-kubeconfig` secret inside `open-cluster-management-agent` namespace. The general idea is:
  1.  Generate the new HUB kubeconfig (dr-hub2 in our case)
  2.  Fetch admin-kubeconfig secret from the managed cluster namespace.
- 3.  Supplying the authorization to `registration` operator to register the managed cluster
+ 3.  Supplying the authorization to the `registration` operator to register the managed cluster
  4.  Using kubeconfig fetched at point 2 to replace the `boostrap-hub-kubeconfig` with kubeconfig generated at point 1
 
 
@@ -251,6 +251,7 @@ users:
     token: ${token}
 EOF
 ```
+
 Now that we have the `newbootstraphub.kubeconfig` we can replace `bootrap-hub-kubeconfig` but beforehand we have to fetch the `managed-one` kubeconfig secret just restored through velero. Pointing `oc` to the new Hub we have to get the `admin-kubeconfig` secret inside the managed cluster namespace. 
 Running the command and filtering through `admin-kubeconfig` we get ``managed-one-0-qg8wm-admin-kubeconfig`
 
@@ -273,7 +274,7 @@ NAME                       TYPE     DATA   AGE
 bootstrap-hub-kubeconfig   Opaque   1      6d16h
 ```
 
-Since the `registration` in the managed cluster we'll need rights to register the mangaged clusters we have to supply them. Remember we did not backup cluster scope resources and the rights are cluster scoped resources. Let's use heredoc again:
+Since the managed cluster `registration` operator needs rights to register the managed clusters we have to supply them. Remember we did not backup cluster scope resources and the rights are cluster scoped resources. Let's use heredoc again:
 
 ```bash=
 cat << EOF | oc  apply -f -
@@ -381,7 +382,7 @@ Now we can replace `boostrap-hub-kubeconfig`:
 oc --kubeconfig=managedcluster.kubeconfig delete secret bootstrap-hub-kubeconfig -n open-cluster-management-agent
 oc --kubeconfig=managedcluster.kubeconfig create secret generic bootstrap-hub-kubeconfig --from-file=kubeconfig=newbootstraphub.kubeconfig -n open-cluster-management-agent
 ```
-Replacing the `boostrap-hub-kubeconfig` trigger the refresh of `pod/klusterlet-registration-agent` and `pod/klusterlet-work-agent`. When these pods restart, the managed cluster will appears in the list of the managed clusters.
+Replacing the `boostrap-hub-kubeconfig` trigger the refresh of `pod/klusterlet-registration-agent` and `pod/klusterlet-work-agent`. When these pods restart, the managed cluster will appear in the list of the managed clusters.
 
 ```shell=
 $ oc get managedclusters
@@ -421,7 +422,7 @@ And now the `dr-hub2` ACM UI correctly reports:
 
 ## Conclusions
 
-We've seen how a managed cluster configurations can be backed up and restored in a new Hub without affecting other PODs except the RHACM pods in the managed cluster (restarting due to `boostrap-hub-kubeconfig` replacing).
+We've seen how a managed cluster configurations can be backed up and restored in a new Hub without affecting other PODs except for the RHACM pods in the managed cluster (restarting due to `boostrap-hub-kubeconfig` replacing).
 
 
 
