@@ -138,7 +138,7 @@ acm-backup-blog   Completed   0        0          2021-08-02 12:12:08 +0200 CEST
 In the `S3 Console` we can see the `acm-backup-log` currently present in the `S3 Console`
 ![](https://i.imgur.com/PgnhKsz.png)
 
-For the sake of this article, the backup process is finished. As already mentioned in a _production environment_ definitively more is needed. Gnerally we could cite :
+For the sake of this article, the backup process is finished. As already mentioned in a _production environment_ definitively more is needed. Generally we could cite :
  * error handling
  * backup frequency
  * S3 storage space handling
@@ -203,7 +203,7 @@ NAME            HUB ACCEPTED   MANAGED CLUSTER URLS   JOINED   AVAILABLE   AGE
 local-cluster   true                                  True     True        5h11m
 ```
 Since this is not a real Disaster Recovery scenario we can push our analysis a little further:
-looking at the UIs rispectively we find the the `managed-one` cluster is still registered to the `dr-hub1` Hub.
+looking at the UIs respectively we find the the `managed-one` cluster is still registered to the `dr-hub1` Hub.
 
 ![](https://i.imgur.com/Nr5vZzX.png)
 
@@ -253,7 +253,7 @@ EOF
 ```
 
 Now that we have the `newbootstraphub.kubeconfig` we can replace `bootrap-hub-kubeconfig` but beforehand we have to fetch the `managed-one` kubeconfig secret just restored through velero. Pointing `oc` to the new Hub we have to get the `admin-kubeconfig` secret inside the managed cluster namespace. 
-Running the command and filtering through `admin-kubeconfig` we get ``managed-one-0-qg8wm-admin-kubeconfig`
+Running the command and filtering through `admin-kubeconfig` we get `managed-one-0-qg8wm-admin-kubeconfig`
 
 ```shell=
 $ oc get secret -o name -n $managedclustername  | grep admin-kubeconfig
