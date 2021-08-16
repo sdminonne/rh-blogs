@@ -424,6 +424,8 @@ And now the `dr-hub2` ACM UI correctly reports:
 
 We've seen how a managed cluster configurations can be backed up and restored in a new Hub without affecting other PODs except for the RHACM pods in the managed cluster (restarting due to `boostrap-hub-kubeconfig` replacing).
 
+The author would like to thanks Zachary Kayyali, David Schmidt, Christine Rizzo for reviewing and contributing to this blog. A special thanks go to Chris Doan for reviews and insights and for being the best teammate one would like to have.
+
 
 
 
