@@ -1,9 +1,9 @@
-# Backup and restore ACM
+# Backup and restore Red Hat Advanced Cluster Management for Kubernetes
 
 
 ## Introduction
 
-RedHat Advanced Cluster Management (RHACM in the following) supplies the ability to manage fleets of Kubernetes and Openshift clusters. RHACM model consists of one control plane Openshift cluster (HUB in the following) and several managed clusters where the workloads run. RHACM model as inspired by the ubiquitous _two layers model_ for example:
+RedHat Advanced Cluster Management for Kubernetes (RHACM in the following) supplies the ability to manage fleets of Kubernetes and Openshift clusters. RHACM model consists of one control plane Openshift cluster (HUB in the following) and several managed clusters where the workloads run. RHACM model as inspired by the ubiquitous _two layers model_ for example:
  * Kubernetes control plane and compute nodes
  * SDN control and data planes
 
