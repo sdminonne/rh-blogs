@@ -110,7 +110,7 @@ As soon `Velero` is up and running, we can run the backup command.
 
 ## The backup process
 
-The backup process is performed backing-up all the main RHACM namespaces and all the managed clusters namespaces, in this case only the `managed-one`. We don't backup cluster scoped resources to minimize the amount of data to backup. Avoiding the backup of cluster scoped resources will have some impact during the _restore_ since we'll need to recreate `cluster-roles` and `clusterrole-bindings`. The managed cluster in RHACM is represented by a namespace (backed-up) and by a custom resource `managedclusters.cluster.open-cluster-management.io`.
+The backup process is performed backing-up all the main RHACM namespaces and all the managed clusters namespaces, in this case only the `managed-one`. We don't backup cluster scoped resources to minimize the amount of data to backup. Avoiding the backup of cluster scoped resources will have some impact during the _restore_ since we'll need to recreate `clusterroles` and `clusterrole-bindings`. The managed cluster in RHACM is represented by a namespace (backed-up) and by a custom resource `managedclusters.cluster.open-cluster-management.io`.
 
 We execute backup through `velero` CLI:
 
