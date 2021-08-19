@@ -3,21 +3,21 @@
 
 ## Introduction
 
-Red Hat Advanced Cluster Management for Kubernetes (RHACM in the following) supplies the ability to manage fleets of Kubernetes and OpenShift clusters. The RHACM model consists of one control plane OpenShift cluster (HUB in the following) and several managed clusters where the workloads run. The RHACM model is inspired by the ubiquitous _two layers model_ for example:
+Red Hat Advanced Cluster Management for Kubernetes (RHACM in the following) supplies the ability to manage fleets of Kubernetes and OpenShift clusters. The RHACM model consists of one control plane OpenShift cluster (HUB in the following) and several managed clusters where the workloads run. The RHACM model is inspired by the ubiquitous _two layer model_. For example:
  * Kubernetes control plane and compute nodes
  * SDN control and data planes
 
-DevOps use this model to work with a two-level architecture, increasing understanding, and finally predictability.
+DevOps uses this same model to work with a two-level architecture, increasing understanding, and finally predictability.
 At the same time, with its simplicity, the two layer approach increases robustness.
 
-Unfortunately the single pane of glass is irreparably linked to the "single point of failure" problem. Recently, understandably, RHACM users keep reporting the need for backing up the control plane configurations to recover quickly in case of an outage. 
+Unfortunately the single pane of glass is irreparably linked to the "single point of failure" problem. Recently, understandably, RHACM users often report the need for backing up the control plane configurations to recover quickly in case of an outage. 
 
 ### DR foundations
 
-The ability to back up, restore, and re-register the managed clusters to RHACM lays the foundation for an Active-Passive [Disaster Recovery](https://en.wikipedia.org/wiki/Disaster_recovery) (DR) solution. Ideally, an organization could back up the HUB configuration at some frequency, restoring the configurations elsewhere in case of an outage. Obviously, a full DR solution is well beyond the scope of this article, and a more robust solution is needed even to start thinking about DR, too many parameters could impact _business continuity_ and every organization has to consider carefully what, how, and when should be backed up and restored to minimize [RTO](https://www.forbes.com/sites/sungardas/2015/04/30/like-the-nfl-draft-is-the-clock-the-enemy-of-your-recovery-time-objective/) and RPO.
+The ability to back up, restore, and re-register managed clusters to RHACM lays the foundation for an Active-Passive [Disaster Recovery](https://en.wikipedia.org/wiki/Disaster_recovery) (DR) solution. Ideally, an organization could back up the HUB configuration at some frequency, restoring the configurations elsewhere in case of an outage. Obviously, a full DR solution is well beyond the scope of this article, and a more robust solution is needed even to start thinking about DR, too many parameters could impact _business continuity_ and every organization has to consider carefully what, how, and when should be backed up and restored to minimize [RTO](https://www.forbes.com/sites/sungardas/2015/04/30/like-the-nfl-draft-is-the-clock-the-enemy-of-your-recovery-time-objective/) and RPO.
 
 ### This blog
-While most of the configuration could be re-created from scratch through, for example, a [GitOps](https://www.redhat.com/en/topics/devops/what-is-gitops) approach, at the end of a backup procedure the managed cluster fleet is not correctly registered in the new HUB. The goal of this article is to show how RHACM managed cluster configurations could be restored. We're only going to use the common Unix shell (`bash`) and the OpenShift `oc` client. 
+While most of the configuration could be re-created from scratch through, for example, a [GitOps](https://www.redhat.com/en/topics/devops/what-is-gitops) approach, at the end of a backup procedure the managed cluster fleet is not correctly registered in the new HUB. The goal of this article is to show how RHACM managed cluster configurations can be restored. We're only going to use the common Unix shell (`bash`) and the OpenShift `oc` client. 
 The backup and restore solution we will use is [Velero](https://velero.io/): the de-facto standard to back up a Kubernetes cluster.
 
 
@@ -201,8 +201,8 @@ $ oc get managedclusters
 NAME            HUB ACCEPTED   MANAGED CLUSTER URLS   JOINED   AVAILABLE   AGE
 local-cluster   true                                  True     True        5h11m
 ```
-Since this is not a real Disaster Recovery scenario we can push our analysis a little further:
-looking at the UIs respectively we find the the `managed-one` cluster is still registered to the `dr-hub1` Hub:
+Since this is not a real DR scenario we can push our analysis a little further.
+Looking at the UIs respectively we find the the `managed-one` cluster is still registered to the `dr-hub1` Hub:
 
 ![](https://i.imgur.com/Nr5vZzX.png)
 
@@ -390,7 +390,7 @@ local-cluster   true                                  True     True        23h
 managed-one     false                                          True        7m1s
 ```
 
-Now let's have a look to the UI. The `dr-hub2` UI simply displays `managed-one` cluster as not (yet) accepted:
+Now let's have a look at the UI. The `dr-hub2` UI simply displays `managed-one` cluster as not (yet) accepted:
 
 ![](https://i.imgur.com/2fnnKe6.png)
 
