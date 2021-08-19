@@ -397,7 +397,7 @@ local-cluster   true                                  True     True        23h
 managed-one     false                                          True        7m1s
 ```
 
-Now let's have a look to the UI. The `dr-hub2` UI simply displays `managed-one` cluster as not (yet) accepted:
+Now let's have a look at the UI. The `dr-hub2` UI simply displays `managed-one` cluster as not (yet) accepted:
 
 ![](https://i.imgur.com/2fnnKe6.png)
 
