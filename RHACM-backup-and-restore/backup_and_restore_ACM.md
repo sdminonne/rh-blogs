@@ -160,7 +160,6 @@ At this point, let's assume that the current hub cluster, `dr-hub1`, is severely
 To proceed in the restore process, `velero` needs to be installed, configuring the S3 storage in the same way:
 
 ```shell
-```shell
 $ velero install \
   --provider aws \
   --plugins velero/velero-plugin-for-aws:v1.2.0 \
@@ -170,7 +169,7 @@ $ velero install \
   --secret-file  credentials-velero
 ```
 
-When `velero` is available the backup CRDs should also be available on the `dr-hub2` hub cluster. Run the following command to verify:
+When `velero` is available the backup CRs should also be available on the `dr-hub2` hub cluster. Run the following command to verify:
 
 ```shell
 $ velero backup get
@@ -221,14 +220,14 @@ This error occurs because the console detects the presence of the `managed-one` 
 
 ### Registering the managed cluster
 
-The current solution to register each managed cluster consists in having each managed cluster `registration` operator  register to the new Hub. Each managed cluster `registration` operator watches the `bootstrap-hub-kubeconfig` secret inside `open-cluster-management-agent` namespace. The general idea is:
+The current solution to register each managed cluster consists in having each managed cluster `registration` operator register to the new Hub. Each managed cluster `registration` operator watches the `bootstrap-hub-kubeconfig` secret inside `open-cluster-management-agent` namespace. The general idea is:
  1.  Generate the new HUB kubeconfig (dr-hub2 in our case)
  2.  Fetch admin-kubeconfig secret from the managed cluster namespace.
  3.  Supplying the authorization to the `registration` operator to register the managed cluster
  4.  Using kubeconfig fetched at point 2 to replace the `boostrap-hub-kubeconfig` with kubeconfig generated at point 1
 
 
-Let's start by generate the new Hub kubeconfig.  We're going to generate it through an [heredoc](https://en.wikipedia.org/wiki/Here_document). Assuming `oc` openshift client is pointing to the new Hub we can generate through this series of commands.
+Let's start by generating the new Hub kubeconfig.  We're going to generate it through an [heredoc](https://en.wikipedia.org/wiki/Here_document). Assuming `oc` OpenShift client is pointing to the new Hub we can generate through this series of commands:
 
 ```bash=
 managedclustername=managed-one
@@ -259,21 +258,21 @@ users:
 EOF
 ```
 
-Now that we have the `newbootstraphub.kubeconfig` we can replace `bootrap-hub-kubeconfig` but beforehand we have to fetch the `managed-one` kubeconfig secret just restored through velero. Pointing `oc` to the new Hub we have to get the `admin-kubeconfig` secret inside the managed cluster namespace. 
-Running the command and filtering through `admin-kubeconfig` we get `managed-one-0-qg8wm-admin-kubeconfig`
+Now that we have the `newbootstraphub.kubeconfig` we can replace `bootrap-hub-kubeconfig`.  But before that we have to fetch the `managed-one` kubeconfig secret just restored through velero. Pointing `oc` to the new Hub we have to get the `admin-kubeconfig` secret inside the managed cluster namespace. 
+Running the command and filtering through `admin-kubeconfig` we get `managed-one-0-qg8wm-admin-kubeconfig`:
 
 ```shell=
 $ oc get secret -o name -n $managedclustername  | grep admin-kubeconfig
 secret/managed-one-0-qg8wm-admin-kubeconfig
 ```
 
-so to automate a little bit we can simply fetch the kubeconfig through the following commands
+So to automate a little bit more we can simply fetch the kubeconfig through the following commands:
 
 ```shell=
 $ managed_kubeconfig_secret=$(basename $(oc get secret -o name -n $managedclustername | grep admin-kubeconfig))
 $ get secret $managed_kubeconfig_secret -n ${managedclustername} -o jsonpath={.data.kubeconfig} | base64 -d > managedcluster.kubeconfig
 ```
-We can test the `managedcluster.kubeconfig` file through any command, but we can try to get the `boostrap-hub-kubeconfig` since we need to replace it.
+We can test the `managedcluster.kubeconfig` file through any command, but we can try to get the `boostrap-hub-kubeconfig` since we need to replace it:
 
 ```shell=
 $  oc --kubeconfig=managedcluster.kubeconfig get secret bootstrap-hub-kubeconfig -n open-cluster-management-agent
@@ -281,7 +280,7 @@ NAME                       TYPE     DATA   AGE
 bootstrap-hub-kubeconfig   Opaque   1      6d16h
 ```
 
-Since the managed cluster `registration` operator needs rights to register the managed clusters we have to supply them. Remember we did not backup cluster scope resources and the rights are cluster scoped resources. Let's use heredoc again:
+Since the managed cluster `registration` operator needs rights to register the managed clusters we have to supply them. Remember we did not back up cluster scope resources and the rights are cluster scoped resources. Let's use heredoc again:
 
 ```bash=
 cat << EOF | oc  apply -f -
@@ -398,23 +397,23 @@ local-cluster   true                                  True     True        23h
 managed-one     false                                          True        7m1s
 ```
 
-Let's have a look to the UI, the `dr-hub2` UI simply display `managed-one` cluster not (yet) accepted
+Now let's have a look to the UI. The `dr-hub2` UI simply displays `managed-one` cluster as not (yet) accepted:
 
 ![](https://i.imgur.com/2fnnKe6.png)
 
-Since the `dr-hub2` is still up and running (luckily no disaster, at least today) we can also take a look to `dr-hub1`. It displays `managed-one` as Offline.
+Since the `dr-hub2` is still up and running (luckily no disaster, at least not today) we can also take a look at `dr-hub1`. It displays `managed-one` as Offline:
 
 ![Cluster ](https://i.imgur.com/zbj4GcA.png)
 
 ### Accepting `managed-one` in the new HUB
 
-We must manually accept the `managed-one` cluster in `dr-hub2` HUB using the command like this:
+We need to manually accept the `managed-one` cluster in `dr-hub2` HUB using the command like this:
 
 ```shell=
  oc patch managedcluster ${managedclustername} -p='{"spec":{"hubAcceptsClient":true}}' --type=merge
 ```
 
-And verify that the managed cluster has joined.
+And verify that the managed cluster has joined:
 
 ```shell=
 oc get managedclusters
