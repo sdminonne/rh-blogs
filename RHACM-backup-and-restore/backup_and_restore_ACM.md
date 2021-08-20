@@ -1,6 +1,6 @@
 # Backup and restore Red Hat Advanced Cluster Management for Kubernetes
 
-**Author**: Dario Minonne
+**Author**: Salvatore Dario Minonne
 
 ## Introduction
 
