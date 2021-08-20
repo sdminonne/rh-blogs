@@ -1,24 +1,25 @@
 # Backup and restore Red Hat Advanced Cluster Management for Kubernetes
 
+**Author**: Dario Minonne
 
 ## Introduction
 
-RedHat Advanced Cluster Management for Kubernetes (RHACM in the following) supplies the ability to manage fleets of Kubernetes and Openshift clusters. RHACM model consists of one control plane Openshift cluster (HUB in the following) and several managed clusters where the workloads run. RHACM model as inspired by the ubiquitous _two layers model_ for example:
+Red Hat Advanced Cluster Management for Kubernetes (RHACM) supplies the ability to manage fleets of Kubernetes and Openshift clusters. The RHACM model consists of a central controller plane that runs in a RHACM cluster (known as the hub cluster), and several managed clusters where the workloads run. For this blog, Red Hat OpenShift Container Platform is the hub cluster. The RHACM model is inspired by the ubiquitous _two-layer model_, which includes the following capabilities:
+
  * Kubernetes control plane and compute nodes
  * SDN control and data planes
 
-DevOps use to work with two levels-architecture, increasing understanding, and finally predictability.
-At the same time, with its simplicity, the two layers approach increases robustness.
+Previously, DevOps worked with two-level architectures, increasing understanding and finally predictability. Simultaneously, the simplicity and the two-layer approach increases robustness.
 
-Unluckily the single pane of glass is irreparably linked to the "single point of failure" problem. In the last months, understandably, RHACM users keep reporting the need of backing up the control plane configurations to recover quickly in case of an outage. 
+Unluckily the single pane of glass is irreparably linked to the "single point of failure" problem. In the last months, RHACM users have reported the need to back up the control plane configurations for a quick recovery, in case of an outage. 
 
-### DR foundations
-
-The ability to backup, restore RHACM, and re-registering the managed clusters lays the foundations for an Active-Passive [Disaster Recovery](https://en.wikipedia.org/wiki/Disaster_recovery) (DR) solution. Ideally, an organization could backup the HUB configuration with some frequency, restoring the configurations elsewhere in case of an outage. Obviously, a full DR solution is well beyond the scope of this article, and a more robust solution is needed even to start thinking about DR, too many parameters could impact _business continuity_ and every organization has to consider carefully what, how, and when should be backed-up and restored to minimize [RTO](https://www.forbes.com/sites/sungardas/2015/04/30/like-the-nfl-draft-is-the-clock-the-enemy-of-your-recovery-time-objective/) and RPO.
-
-### This blog
-While most of the configuration could be re-created from scratch through, for example,  [GitOps](https://www.redhat.com/en/topics/devops/what-is-gitops) approach, at the end of a backup procedure the managed cluster fleet is not correctly registered in the new HUB. The goal of this article is to show how RHACM managed clusters configurations could be restored. We're going to use only common Unix command (`bash`) and the Openshift `oc` client. 
+While most of the configuration can be recreated from scratch using the [GitOps](https://www.redhat.com/en/topics/devops/what-is-gitops) approach, at the end of a backup procedure the managed cluster fleet is not correctly registered in the new hub cluster. The goal of this article is to show how RHACM managed clusters configurations could be restored. We're going to use only common Unix command (`bash`) and the Openshift `oc` client. 
 As backup and restore solution we use [Velero](https://velero.io/): the de-facto standard to backup a Kubernetes cluster.
+
+
+### Disaster Recovery foundations
+
+The ability to backup RHACM, restore RHACM, and re-register the managed clusters, lays the foundations for an active-passive [Disaster Recovery](https://en.wikipedia.org/wiki/Disaster_recovery) (DR) solution. Ideally, an organization can backup the hub cluster configuration with some frequency, restoring the configurations elsewhere in case of an outage. Obviously, a full DR solution is well beyond the scope of this article, and a more robust solution is needed even to start thinking about DR. There are too many parameters that can impact _business continuity_ and every organization has to consider carefully what, how, and when the configuration should be backed up and restored, to minimize your [Recovery Time Objective  (RTO)](https://www.forbes.com/sites/sungardas/2015/04/30/like-the-nfl-draft-is-the-clock-the-enemy-of-your-recovery-time-objective/) and [Recovery Point Objective (RPO)](https://www.ibm.com/services/business-continuity/rpo#:~:text=An%20RPO%20is%20a%20measurement,before%20the%20disaster%20or%20failure).
 
 
 ## Velero
