@@ -47,7 +47,7 @@ local-cluster   true                                  True     True        5d1h
 managed-one     true                                  True     True        4d23h
 ```
 
-View the following image of the accepted clusters:
+View the following console image of the accepted clusters:
 
 ![Cluster management image](https://i.imgur.com/0WlqaBZ.png)
 
@@ -87,8 +87,7 @@ Deployment/velero: created
 Velero is installed! ⛵ Use 'kubectl logs deployment/velero -n velero' to view the status.
 ```
 
-The `install` command creates the `velero` namespace and installs all what is needed by Velero. I've removed most of the all the CRDs creation leaving only `restores.velero.io` and `backups.velero.io`. `install` command creates the `velero` namespace and few `Velero` running resources plus the necessary RBACs resources. One can check the running resources through the command:
-
+The `install` command creates the `velero` namespace and installs all that is needed by Velero. I've removed most of the all the CRD creation leaving only `restores.velero.io` and `backups.velero.io`. The `install` command creates the `velero` namespace and runs few `velero` resources, along with the necessary RBAC resources. You can check which resources are running with the following command:
 
 ```shell
 $ oc get all -n velero
@@ -102,7 +101,7 @@ NAME                                DESIRED   CURRENT   READY   AGE
 replicaset.apps/velero-658979bddd   1         1         1       7m50s
 ```
 
-A simple way to check whether `Velero` can connect to S3 storage could be through running `grep available` in the logs:
+A simple way to check whether `Velero` can connect to S3 storage can be done by running the `grep available` command in the logs:
 
 ```shell
 $ oc logs deployment/velero -n velero | grep available
@@ -111,13 +110,13 @@ time="2021-08-01T20:24:56Z" level=info msg="Backup storage location valid, marki
 ...
 ```
 
-As soon `Velero` is up and running, we can run the backup command.
+After Velero is up and running, the backup command can be run.
 
 ## The backup process
 
-The backup process is performed backing-up all the main RHACM namespaces and all the managed clusters namespaces, in this case only the `managed-one`. We don't backup cluster scoped resources to minimize the amount of data to backup. Avoiding the backup of cluster scoped resources will have some impact during the _restore_ since we'll need to recreate `clusterroles` and `clusterrole-bindings`. The managed cluster in RHACM is represented by a namespace (backed-up) and by a custom resource `managedclusters.cluster.open-cluster-management.io`.
+The backup process is performed by backing up all of the main RHACM namespaces and all the managed cluster namespaces, in this case only the `managed-one`. Avoid backing up cluster-scoped resources to minimize the amount of data to backup. When you avoid backing up the cluster-scoped resources, _restore_ is impacted because `clusterroles` and `clusterrole-bindings` need to be recreated. The managed cluster in RHACM is represented by a namespace (backed-up) <!--is the namespace named backed-up or are you informing the reader that the namespace is backed up?--> and by a custom resource named, `managedclusters.cluster.open-cluster-management.io`.
 
-We execute backup through `velero` CLI:
+Use the `velero` CL to run the backup command:
 
 ```shell
 $ velero backup create acm-backup-blog \
@@ -132,7 +131,7 @@ Waiting for backup to complete. You may safely press ctrl-c to stop waiting - yo
 Backup completed with status: Completed. You may check for more information using the commands `velero backup describe acm-backup-blog` and `velero backup logs acm-backup-blog`.
 ```
 
-At the end of the backup process, we list the backups (only one currently), in `Completed` status without errors or warnings.
+At the end of the backup process, the backups (only one currently) that have the `Completed` status without errors or warnings are listed. Run the following command:
 
 ```shell
 $ velero backup get -n velero
@@ -140,24 +139,25 @@ NAME              STATUS      ERRORS   WARNINGS   CREATED                       
 acm-backup-blog   Completed   0        0          2021-08-02 12:12:08 +0200 CEST   29d       default            <none>
 ```
 
-In the `S3 Console` we can see the `acm-backup-log` currently present in the `S3 Console`
-![](https://i.imgur.com/PgnhKsz.png)
+View the following image of the _S3 console_. Notice that the `acm-backup-log` is currently present in the _S3 console_:
+![Amazon S3 image](https://i.imgur.com/PgnhKsz.png)
 
-For the sake of this article, the backup process is finished. As already mentioned in a _production environment_ definitively more is needed. Generally we could cite :
- * error handling
- * backup frequency
- * S3 storage space handling
- * Encrypting data at rest
+For the sake of this article, the backup process is finished. As already mentioned in a _production environment_, there is definitively more configurations needed for a _production environment_. Generally, the following configurations can be set:
 
-the list could (and should) continue accordingly to the specific use case.
+  * Error handling
+  * Backup frequency
+  * S3 storage space handling
+  * Encrypting data at rest
+
+This list can (and should) continue to grow, according to the specific use cases.
 
 ---
 
 ## The restore process
 
-At this point, we should assume the current Hub `dr-hub1` is severely impacted by a _disaster_. So we operate on another Hub (`dr-hub2`) to restore the data and to re-register the managed cluster `managed-one`. To simplify this article, I assume ACM is already installed on `dr-hub2`.
+At this point, let's assume that the current hub cluster, `dr-hub1`, is severely impacted by a _disaster_. In this case, another hub cluster (`dr-hub2`) is used to restore the data and to re-register the managed cluster (`managed-one`). To maintain simplicity in this article, let's assume the RHACM is already installed on `dr-hub2`.
 
-To proceed on the restore we need to install `Velero` configuring the S3 storage in the same way
+To proceed in the restore process, `velero` needs to be installed, configuring the S3 storage in the same way:
 
 ```shell
 ```shell
@@ -170,7 +170,7 @@ $ velero install \
   --secret-file  credentials-velero
 ```
 
-As soon the `Velero` is available the backups CRs should be available also on `dr-hub2`
+When `velero` is available the backup CRDs should also be available on the `dr-hub2` hub cluster. Run the following command to verify:
 
 ```shell
 $ velero backup get
@@ -178,7 +178,7 @@ NAME              STATUS      ERRORS   WARNINGS   CREATED                       
 acm-backup-blog   Completed   0        0          2021-08-02 12:12:08 +0200 CEST   29d       default            <none>
 ```
 
-or through the usual Openshift client
+You can also use the OpenShift client to check for the CRDs in the `velero` namespace:
 
 ```shell
 $ oc get backups -n velero
@@ -186,7 +186,7 @@ NAME              AGE
 acm-backup-blog   58m
 ```
 
-Now we can restore the managed cluster in `dr-hub2`, we're going to use `Velero` CLI again:
+Now, restore the managed cluster in `dr-hub2` using the `Velero` CLI. Run the following command:
 
 ```shell
 velero restore create --from-backup acm-backup-blog
@@ -197,7 +197,7 @@ NAME                             BACKUP            STATUS      STARTED          
 acm-backup-blog-20210802182417   acm-backup-blog   Completed   2021-08-02 18:24:17 +0200 CEST   2021-08-02 18:24:57 +0200 CEST   0        56         2021-08-02 18:24:17 +0200 CEST   <none>
 ```
 
-At the end of the restore process, even without errors as in our case, we can verify the creation of the managed cluster namespace but no managed cluster registered.
+At the end of the restore process, <!--even without errors as in our case,--> verify the creation of the managed cluster namespace and verify that there are no managed cluster registered to your hub cluster:
 
 ```shell
 $ oc get ns managed-one --show-labels=true
@@ -207,15 +207,17 @@ $ oc get managedclusters
 NAME            HUB ACCEPTED   MANAGED CLUSTER URLS   JOINED   AVAILABLE   AGE
 local-cluster   true                                  True     True        5h11m
 ```
-Since this is not a real Disaster Recovery scenario we can push our analysis a little further:
-looking at the UIs respectively we find the the `managed-one` cluster is still registered to the `dr-hub1` Hub.
 
-![](https://i.imgur.com/Nr5vZzX.png)
+Since this is not a real DR scenario, let's push our analysis a little further.
 
-Even if the managed clusters is not registered it appears in the UI.
-![](https://i.imgur.com/gHIYsSM.png)
+* Taking a look at the consoles respectively, notice that the `managed-one` cluster is still registered to the `dr-hub1` hub cluster:
 
-UI detects the presence of the `managed-one` namespace but it returns the failure since it cannot fetch any information from `managedcluster` CRD.
+![Image of cluster management table from the console](https://i.imgur.com/Nr5vZzX.png)
+
+* Even though the managed cluster is not registered it appears in the console:
+![Image of failed managed cluster](https://i.imgur.com/gHIYsSM.png)
+
+This error occurs because the console detects the presence of the `managed-one` namespace, but it returns the failure since it cannot fetch any information from the `managedcluster` CRD.
 
 ### Registering the managed cluster
 
