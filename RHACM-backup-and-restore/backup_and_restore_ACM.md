@@ -4,16 +4,16 @@
 
 ## Introduction
 
-Red Hat Advanced Cluster Management for Kubernetes (RHACM) supplies the ability to manage fleets of Kubernetes and Openshift clusters. The RHACM model consists of a central controller plane of OpenShift that runs in a RHACM cluster (known as the hub cluster), and several managed clusters where the workloads run. <!--The RHACM model consists of one control plane OpenShift cluster (HUB in the following) and several managed clusters where the workloads run. ARE YOU STATING THAT OCP IS THE HB CLUSTER OR THAT RHACM IS THE HUB CLUSTER?--> <!--For this blog, Red Hat OpenShift Container Platform is the hub cluster.--> The RHACM model is inspired by the ubiquitous _two-layer model_, which includes the following components:
+Red Hat Advanced Cluster Management for Kubernetes (RHACM) supplies the ability to manage fleets of Kubernetes and Openshift clusters. The RHACM model consists of a central controller plane of OpenShift that runs in a RHACM cluster (known as the hub cluster), and several managed clusters where the workloads run. <!--The RHACM model consists of one control plane OpenShift cluster (HUB in the following) and several managed clusters where the workloads run. ARE YOU STATING THAT OCP IS THE HB CLUSTER OR THAT RHACM IS THE HUB CLUSTER? Dario: I'm stating that RHACM is the Hub cluster. RHACM runs in Openshift. --> <!--For this blog, Red Hat OpenShift Container Platform is the hub cluster.--> The RHACM model is inspired by the ubiquitous _two-layer model_, which includes the following components:
 
  * Kubernetes control plane and compute nodes
  * SDN control and data planes
 
 DevOps uses this same model to work with a two-level architecture, increasing understanding and finally predictability. At the same time, the simplicity and the two-layer approach increases robustness.
 
-Unfortunately, the single pane of glass is irreparably linked to the "single point of failure" problem. Recently, RHACM users often report the need to back up the control plane configurations for a quick recovery, in case of an outage. 
+Unfortunately, the single pane of glass is irreparably linked to the "single point of failure" problem. Recently, RHACM users often report the need to back up the control plane configurations for a quick recovery, in case of an outage.
 
-While most of the configuration can be recreated from scratch using the [GitOps](https://www.redhat.com/en/topics/devops/what-is-gitops) approach, at the end of a backup procedure the managed cluster fleet is not correctly registered in the new hub cluster. The goal of this article is to show how RHACM managed clusters configurations can be restored. In this blog, I use only common Unix command (`bash`) and the OpenShift (`oc`) client. 
+While most of the configuration can be recreated from scratch using the [GitOps](https://www.redhat.com/en/topics/devops/what-is-gitops) approach, at the end of a backup procedure the managed cluster fleet is not correctly registered in the new hub cluster. The goal of this article is to show how RHACM managed clusters configurations can be restored. In this blog, I use only common Unix command (`bash`) and the OpenShift (`oc`) client.
 As a backup and restore solution, I use [Velero](https://velero.io/), the de-facto standard to back up a Kubernetes cluster.
 
 
@@ -34,7 +34,7 @@ I demonstrate how to deploy Velero through its CLI, but it can be installed in o
 
 ## The configuration
 
-Our _fleet_ is composed of only one managed cluster named `managed-one`. Having several managed clusters doesn't change the fundamental ideas that are present in this article, <!--what are the "fundamental ideas"? I would update the sentence to read: Having several managed clusters require a `loop` through the bash commands and potentially the need to `wait until` each command is finished.--> it only requires a `loop` through the bash commands and potentially the need to wait until each command is finished. 
+Our _fleet_ is composed of only one managed cluster named `managed-one`. Having several managed clusters doesn't change the fundamental ideas that are present in this article, <!--what are the "fundamental ideas"? I would update the sentence to read: Having several managed clusters require a `loop` through the bash commands and potentially the need to `wait until` each command is finished.--> it only requires a `loop` through the bash commands and potentially the need to wait until each command is succesfully finished <!-- Dario: added the succesffully, since one failure can undermine other commands execution -->
 
 <!--it seems like this image should be after the command and the results--><!--![Cluster management image](https://i.imgur.com/0WlqaBZ.png)-->
 
@@ -72,7 +72,7 @@ $ velero install \
   --secret-file  credentials-velero
 [...] # output not reported
 CustomResourceDefinition/backups.velero.io: created
-[...] # output not reported 
+[...] # output not reported
 CustomResourceDefinition/restores.velero.io: created
 [...] # output not reported
 Namespace/velero: created
@@ -114,15 +114,15 @@ After Velero is up and running, the backup command can be run.
 
 ## The backup process
 
-The backup process is performed by backing up all of the main RHACM namespaces and all the managed cluster namespaces, in this case only the `managed-one`. Avoid backing up cluster-scoped resources to minimize the amount of data to backup. When you avoid backing up the cluster-scoped resources, _restore_ is impacted because `clusterroles` and `clusterrole-bindings` need to be recreated. The managed cluster in RHACM is represented by a namespace (backed-up) <!--is the namespace named backed-up or are you informing the reader that the namespace is backed up?--> and by a custom resource named, `managedclusters.cluster.open-cluster-management.io`.
+The backup process is performed by backing up all of the main RHACM namespaces and all the managed cluster namespaces, in this case only the `managed-one`. Avoid backing up cluster-scoped resources to minimize the amount of data to backup. When you avoid backing up the cluster-scoped resources, _restore_ is impacted because `clusterroles` and `clusterrole-bindings` need to be recreated. The managed cluster in RHACM is represented by a namespace (backed up) <!--is the namespace named backed-up or are you informing the reader that the namespace is backed up? Dario: It's the namespace that it's backed up, not the name. --> and by a custom resource instance of `managedclusters.cluster.open-cluster-management.io` CRD <!-- Dario: CR is the instance of CRD (D for definitions). `managedclusters.cluster.open-cluster-management.io` is the full name of the CRD -->.
 
 Use the `velero` CL to run the backup command:
 
 ```shell
 $ velero backup create acm-backup-blog \
-  --wait \ 
+  --wait \
   --include-cluster-resources=false \
-  --exclude-resources nodes,events,certificatesigningrequests \ 
+  --exclude-resources nodes,events,certificatesigningrequests \
   --include-namespaces managed-one,hive,openshift-operator-lifecycle-manager,open-cluster-management-agent,open-cluster-management-agent-addon
 [...]
 Backup request "acm-backup-blog" submitted successfully.
@@ -160,7 +160,6 @@ At this point, let's assume that the current hub cluster, `dr-hub1`, is severely
 To proceed in the restore process, `velero` needs to be installed, configuring the S3 storage in the same way:
 
 ```shell
-```shell
 $ velero install \
   --provider aws \
   --plugins velero/velero-plugin-for-aws:v1.2.0 \
@@ -170,7 +169,7 @@ $ velero install \
   --secret-file  credentials-velero
 ```
 
-When `velero` is available the backup CRDs should also be available on the `dr-hub2` hub cluster. Run the following command to verify:
+When `velero` is available the backup CRs <!-- Dario: CRs not CRDs --> should also be available on the `dr-hub2` hub cluster. Run the following command to verify:
 
 ```shell
 $ velero backup get
@@ -197,7 +196,7 @@ NAME                             BACKUP            STATUS      STARTED          
 acm-backup-blog-20210802182417   acm-backup-blog   Completed   2021-08-02 18:24:17 +0200 CEST   2021-08-02 18:24:57 +0200 CEST   0        56         2021-08-02 18:24:17 +0200 CEST   <none>
 ```
 
-At the end of the restore process, <!--even without errors as in our case,--> verify the creation of the managed cluster namespace and verify that there are no managed cluster registered to your hub cluster:
+At the end of the restore process, <!--even without errors as in our case, Dario: we don't backup in case of errors (the normal situation). --> verify the creation of the managed cluster namespace and verify that there are no managed cluster registered to your hub cluster:
 
 ```shell
 $ oc get ns managed-one --show-labels=true
@@ -221,14 +220,14 @@ This error occurs because the console detects the presence of the `managed-one` 
 
 ### Registering the managed cluster
 
-The current solution to register each managed cluster consists in having each managed cluster `registration` operator  register to the new Hub. Each managed cluster `registration` operator watches the `bootstrap-hub-kubeconfig` secret inside `open-cluster-management-agent` namespace. The general idea is:
+The current solution to register each managed cluster consists in having each managed cluster `registration` operator register to the new Hub. Each managed cluster `registration` operator watches the `bootstrap-hub-kubeconfig` secret inside `open-cluster-management-agent` namespace. The general idea is:
  1.  Generate the new HUB kubeconfig (dr-hub2 in our case)
  2.  Fetch admin-kubeconfig secret from the managed cluster namespace.
  3.  Supplying the authorization to the `registration` operator to register the managed cluster
  4.  Using kubeconfig fetched at point 2 to replace the `boostrap-hub-kubeconfig` with kubeconfig generated at point 1
 
 
-Let's start by generate the new Hub kubeconfig.  We're going to generate it through an [heredoc](https://en.wikipedia.org/wiki/Here_document). Assuming `oc` openshift client is pointing to the new Hub we can generate through this series of commands.
+Let's start by generate the new Hub kubeconfig.  We're going to generate it through an [heredoc](https://en.wikipedia.org/wiki/Here_document). Assuming `oc` openshift client is pointing to the new Hub we can generate through this series of commands:
 
 ```bash=
 managedclustername=managed-one
@@ -259,7 +258,7 @@ users:
 EOF
 ```
 
-Now that we have the `newbootstraphub.kubeconfig` we can replace `bootrap-hub-kubeconfig` but beforehand we have to fetch the `managed-one` kubeconfig secret just restored through velero. Pointing `oc` to the new Hub we have to get the `admin-kubeconfig` secret inside the managed cluster namespace. 
+Now that we have the `newbootstraphub.kubeconfig` we can replace `bootrap-hub-kubeconfig` but beforehand we have to fetch the `managed-one` kubeconfig secret just restored through velero. Pointing `oc` to the new Hub we have to get the `admin-kubeconfig` secret inside the managed cluster namespace.
 Running the command and filtering through `admin-kubeconfig` we get `managed-one-0-qg8wm-admin-kubeconfig`
 
 ```shell=
@@ -402,7 +401,7 @@ Let's have a look to the UI, the `dr-hub2` UI simply display `managed-one` clust
 
 ![](https://i.imgur.com/2fnnKe6.png)
 
-Since the `dr-hub2` is still up and running (luckily no disaster, at least today) we can also take a look to `dr-hub1`. It displays `managed-one` as Offline.
+Since the `dr-hub1` is still up and running (luckily no disaster, at least today) we can also take a look to `dr-hub1`. It displays `managed-one` as Offline.
 
 ![Cluster ](https://i.imgur.com/zbj4GcA.png)
 
@@ -432,9 +431,3 @@ And now the `dr-hub2` ACM UI correctly reports:
 I have demonstrated how managed cluster configurations can be backed up and restored in a new hub cluster without affecting other pods, except for the RHACM pods in the managed cluster. As a reminder, the RHACM pods restart due to the replacement of `boostrap-hub-kubeconfig`.
 
 I want to give a special thanks to Zachary Kayyali, David Schmidt, and Christine Rizzo for reviewing and contributing to this blog. Another special thanks go to Chris Doan for the reviews, insights, and for being the best teammate one would like to have.
-
-
-
-
-
-
