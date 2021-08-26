@@ -4,7 +4,7 @@
 
 ## Introduction
 
-Red Hat Advanced Cluster Management for Kubernetes (RHACM) supplies the ability to manage fleets of Kubernetes and Openshift clusters. The RHACM model consists of a central controller plane of OpenShift that runs in a RHACM cluster (known as the hub cluster), and several managed clusters where the workloads run. <!--The RHACM model consists of one control plane OpenShift cluster (HUB in the following) and several managed clusters where the workloads run. ARE YOU STATING THAT OCP IS THE HB CLUSTER OR THAT RHACM IS THE HUB CLUSTER?--> <!--For this blog, Red Hat OpenShift Container Platform is the hub cluster.--> The RHACM model is inspired by the ubiquitous _two-layer model_, which includes the following components:
+Red Hat Advanced Cluster Management for Kubernetes (RHACM) supplies the ability to manage fleets of Kubernetes and Openshift clusters. The RHACM model consists of a central controller plane of OpenShift that runs in a RHACM cluster (known as the hub cluster), and several managed clusters where the workloads run. <!--The RHACM model consists of one control plane OpenShift cluster (HUB in the following) and several managed clusters where the workloads run. ARE YOU STATING THAT OCP IS THE HB CLUSTER OR THAT RHACM IS THE HUB CLUSTER? Dario: I'm stating that RHACM is the Hub cluster. RHACM runs in Openshift. --> <!--For this blog, Red Hat OpenShift Container Platform is the hub cluster.--> The RHACM model is inspired by the ubiquitous _two-layer model_, which includes the following components:
 
  * Kubernetes control plane and compute nodes
  * SDN control and data planes
@@ -34,7 +34,7 @@ I demonstrate how to deploy Velero through its CLI, but it can be installed in o
 
 ## The configuration
 
-Our _fleet_ is composed of only one managed cluster named `managed-one`. Having several managed clusters doesn't change the fundamental ideas that are present in this article, <!--what are the "fundamental ideas"? I would update the sentence to read: Having several managed clusters require a `loop` through the bash commands and potentially the need to `wait until` each command is finished.--> it only requires a `loop` through the bash commands and potentially the need to wait until each command is finished. 
+Our _fleet_ is composed of only one managed cluster named `managed-one`. Having several managed clusters doesn't change the fundamental ideas that are present in this article, <!--what are the "fundamental ideas"? I would update the sentence to read: Having several managed clusters require a `loop` through the bash commands and potentially the need to `wait until` each command is finished.--> it only requires a `loop` through the bash commands and potentially the need to wait until each command is succesfully finished <!-- Dario -->
 
 <!--it seems like this image should be after the command and the results--><!--![Cluster management image](https://i.imgur.com/0WlqaBZ.png)-->
 
@@ -114,7 +114,7 @@ After Velero is up and running, the backup command can be run.
 
 ## The backup process
 
-The backup process is performed by backing up all of the main RHACM namespaces and all the managed cluster namespaces, in this case only the `managed-one`. Avoid backing up cluster-scoped resources to minimize the amount of data to backup. When you avoid backing up the cluster-scoped resources, _restore_ is impacted because `clusterroles` and `clusterrole-bindings` need to be recreated. The managed cluster in RHACM is represented by a namespace (backed-up) <!--is the namespace named backed-up or are you informing the reader that the namespace is backed up?--> and by a custom resource named, `managedclusters.cluster.open-cluster-management.io`.
+The backup process is performed by backing up all of the main RHACM namespaces and all the managed cluster namespaces, in this case only the `managed-one`. Avoid backing up cluster-scoped resources to minimize the amount of data to backup. When you avoid backing up the cluster-scoped resources, _restore_ is impacted because `clusterroles` and `clusterrole-bindings` need to be recreated. The managed cluster in RHACM is represented by a namespace (backed up) <!--is the namespace named backed-up or are you informing the reader that the namespace is backed up? Dario: It's the namespace that it's backed up, not the name. --> and by a custom resource instance of `managedclusters.cluster.open-cluster-management.io` CRD <!-- Dario: CR is the instance of CRD (D for definitions). `managedclusters.cluster.open-cluster-management.io` is the full name of the CRD -->.
 
 Use the `velero` CL to run the backup command:
 
@@ -169,7 +169,7 @@ $ velero install \
   --secret-file  credentials-velero
 ```
 
-When `velero` is available the backup CRs should also be available on the `dr-hub2` hub cluster. Run the following command to verify:
+When `velero` is available the backup CRs <!-- Dario: CRs not CRDs --> should also be available on the `dr-hub2` hub cluster. Run the following command to verify:
 
 ```shell
 $ velero backup get
@@ -196,7 +196,7 @@ NAME                             BACKUP            STATUS      STARTED          
 acm-backup-blog-20210802182417   acm-backup-blog   Completed   2021-08-02 18:24:17 +0200 CEST   2021-08-02 18:24:57 +0200 CEST   0        56         2021-08-02 18:24:17 +0200 CEST   <none>
 ```
 
-At the end of the restore process, <!--even without errors as in our case,--> verify the creation of the managed cluster namespace and verify that there are no managed cluster registered to your hub cluster:
+At the end of the restore process, <!--even without errors as in our case, Dario: we don't backup in case of errors (the normal situation). --> verify the creation of the managed cluster namespace and verify that there are no managed cluster registered to your hub cluster:
 
 ```shell
 $ oc get ns managed-one --show-labels=true
@@ -424,7 +424,7 @@ managed-one     true                                  True     True        104m
 
 And now the `dr-hub2` ACM UI correctly reports:
 
-![](https://i.imgur.com/As5Uh6o.png) <!--similar screenshot as 0WlqaBZ in line 39-->
+![](https://i.imgur.com/As5Uh6o.png) <!--similar screenshot as 0WlqaBZ in line 39: Dario: yeah! similar but not the same. 0WlqaBZ was for original HUB this one is for the new HUB with same (restored) data. See the URLs -->
 
 ## Conclusions
 
